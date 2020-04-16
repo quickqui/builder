@@ -8,7 +8,7 @@ export const env: {
   // launcherName?: string;
 } = (() => {
   const defaults = {
-    modelServerPort: 1111
+    modelServerPort: 5111
   };
   return Object.assign(
     {},

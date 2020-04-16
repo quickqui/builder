@@ -6,7 +6,6 @@
     "start": "ts-node  src/index.ts"
   },
   "dependencies": {
-    "@quick-qui/launcher": "^1.2.0",
     "@quick-qui/model-defines": "^2.4.4",
     "@types/lodash": "^4.14.149",
     "async-exit-hook": "^2.0.1",
