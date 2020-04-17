@@ -7,7 +7,6 @@ import fs from "fs";
 
 
 //NOTE 从../model-server起一个model-server子进程。
-//TODO 是否合理？
 model.then(m => {
   const implementationModel = withImplementationModel(m)?.implementationModel;
   if (implementationModel) {
