@@ -5,10 +5,13 @@ export const env: {
   modelPath: string;
   modelServerPort: number;
   distDir: string;
+  launcherType: string;
+  launcherName?: string;
   // launcherName?: string;
 } = (() => {
   const defaults = {
     modelServerPort: 5111,
+    launcherType: "docker",
   };
   return Object.assign(
     {},
@@ -16,13 +19,11 @@ export const env: {
     filterObject({
       // modelUrl: process.env.MODEL_URL ?? no("MODEL_URL"),
       modelPath: process.env.MODEL_PATH ?? noEnvFound("MODEL_PATH"),
+      launcherName: process.env.LAUNCHER_NAME,
+      launcherType: process.env.LAUNCHER_TYPE,
       distDir:
         (process.env.DIST_DIR || process.env.DIST_PATH) ??
         noEnvFound("DIST_DIR"),
-      // launcherName: process.env.LAUNCHER_NAME,
-      //  ( (process.env.MODEL_SERVER_PORT &&
-      //     parseInt(process.env.MODEL_SERVER_PORT)) ||
-      //   (process.env.PORT && parseInt(process.env.PORT)))
     })
   );
 })();

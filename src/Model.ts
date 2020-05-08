@@ -5,33 +5,52 @@ import { env } from "./Env";
 import axios from "axios";
 import path from "path";
 import waitPort from "wait-port";
+
+import pkgDir from "pkg-dir";
+
 const modelUrl = `http://localhost:${env.modelServerPort}`;
 
 import exitHook from "async-exit-hook";
+import { log } from "./Util";
 
 const params = {
   host: "localhost",
-  port: env.modelServerPort
+  port: env.modelServerPort,
 };
 
-const server = spawn("npm", ["start"], {
-  cwd: path.resolve(".", "../model-server"),
-  stdio: "inherit",
-  env: {
-    PATH: process.env.PATH,
-    MODEL_PATH: env.modelPath,
-    PORT: env.modelServerPort + ""
+function tryResolve(name: string): string | undefined {
+  try {
+    return require.resolve(name);
+  } catch (err) {
+    if (err.code === "MODULE_NOT_FOUND") {
+      return undefined;
+    } else {
+      throw err;
+    }
   }
-});
+}
 
-export const model: Promise<Model> = waitPort(params).then(_ =>
-  axios.get(`${modelUrl}/models/default`).then(_ => _.data)
+const serverPath = tryResolve("@quick-qui/model-server") ;
+
+
+const server = serverPath
+  ? spawn("npm", ["start"], {
+      cwd: pkgDir.sync(serverPath),
+      stdio: "inherit",
+      env: {
+        PATH: process.env.PATH,
+        MODEL_PATH: path.resolve(".", env.modelPath),
+        PORT: env.modelServerPort + "",
+      },
+    })
+  : undefined;
+
+export const model: Promise<Model> = waitPort(params).then((_) =>
+  axios.get(`${modelUrl}/models/default`).then((_) => _.data)
 );
 
-
 exitHook(() => {
-  //TODO 有时候kill不成功，没有明白是为啥。有时候启动会有port 1111被占用的报告。可能跟开发中save文件，此进程重启有关。
-  console.log(`killing model server...`);
+  log.info(`killing model server...`);
   server?.kill();
-  console.log(`model server killed`);
+  log.info(`model server killed`);
 });
