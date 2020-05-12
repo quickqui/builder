@@ -1,21 +1,24 @@
 #!/usr/bin/env node
 
-
 import { model } from "./Model";
 import { withImplementationModel } from "@quick-qui/model-defines";
 import { env } from "./Env";
 import path from "path";
 import fs from "fs-extra";
 import { log, childProcessSync } from "./Util";
+import pkgUp from "pkg-up";
 
 model.then((m) => {
   const implementationModel = withImplementationModel(m)?.implementationModel;
   if (implementationModel) {
-    //TODO 询问生成package的各个字段 -  name、version…… 
+    //TODO 询问生成package的各个字段 -  name、version……
     //MARK npm init有这一步。
     log.info(`copying startup script`);
     fs.ensureDirSync(path.resolve(".", env.distDir));
-    fs.copySync("./templates", path.resolve(".", env.distDir));
+    fs.copySync(
+      path.resolve(pkgUp.sync() ?? ".", "./templates"),
+      path.resolve(".", env.distDir)
+    );
     log.info(`startup script copied`);
 
     const npmPath = path.resolve(env.distDir);
