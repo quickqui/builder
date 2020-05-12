@@ -1,5 +1,9 @@
 import { filterObject, noEnvFound } from "./Util";
-import { throws } from "assert";
+import dote from "dotenv";
+
+dote.config();
+
+
 export const env: {
   // modelUrl: string;
   modelPath: string;
@@ -12,13 +16,14 @@ export const env: {
   const defaults = {
     modelServerPort: 5111,
     launcherType: "docker",
+    modelPath:'.'
   };
   return Object.assign(
     {},
     defaults,
     filterObject({
       // modelUrl: process.env.MODEL_URL ?? no("MODEL_URL"),
-      modelPath: process.env.MODEL_PATH ?? noEnvFound("MODEL_PATH"),
+      modelPath: process.env.MODEL_PATH ,
       launcherName: process.env.LAUNCHER_NAME,
       launcherType: process.env.LAUNCHER_TYPE,
       distDir:

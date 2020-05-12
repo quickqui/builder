@@ -1,3 +1,6 @@
+#!/usr/bin/env node
+
+
 import { model } from "./Model";
 import { withImplementationModel } from "@quick-qui/model-defines";
 import { env } from "./Env";

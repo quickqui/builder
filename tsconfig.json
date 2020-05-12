@@ -10,6 +10,7 @@
     "moduleResolution": "node",
     "module": "CommonJS",
     "resolveJsonModule": true,
-    "esModuleInterop": true 
-  }
+    "esModuleInterop": true
+  },
+  "exclude": ["./templates"]
 }
