@@ -6,7 +6,7 @@ import { env } from "./Env";
 import path from "path";
 import fs from "fs-extra";
 import { log, childProcessSync } from "./Util";
-import pkgUp from "pkg-up";
+import pkgDir from "pkg-dir";
 
 model.then((m) => {
   const implementationModel = withImplementationModel(m)?.implementationModel;
@@ -16,7 +16,7 @@ model.then((m) => {
     log.info(`copying startup script`);
     fs.ensureDirSync(path.resolve(".", env.distDir));
     fs.copySync(
-      path.resolve(pkgUp.sync() ?? ".", "./templates"),
+      path.resolve(pkgDir.sync(__dirname) ?? ".", "./templates"),
       path.resolve(".", env.distDir)
     );
     log.info(`startup script copied`);
