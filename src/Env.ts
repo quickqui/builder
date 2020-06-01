@@ -15,7 +15,7 @@ export const env: {
 } = (() => {
   const defaults = {
     modelServerPort: 5111,
-    launcherType: "docker",
+    launcherType: "npm",
     modelPath:'.'
   };
   return Object.assign(
