@@ -1,4 +1,4 @@
-import { Model } from "@quick-qui/model-core";
+import { Model, Log } from "@quick-qui/model-core";
 import { spawn } from "child_process";
 
 import { env } from "./Env";
@@ -7,13 +7,12 @@ import path from "path";
 import waitPort from "wait-port";
 
 import pkgDir from "pkg-dir";
-
-const modelUrl = `http://localhost:${env.modelServerPort}`;
-
 import exitHook from "async-exit-hook";
 import { log } from "./Util";
 
-const params = {
+const modelServerEndpointUrl = `http://localhost:${env.modelServerPort}`;
+
+const modelServerEndpoint = {
   host: "localhost",
   port: env.modelServerPort,
 };
@@ -30,8 +29,7 @@ function tryResolve(name: string): string | undefined {
   }
 }
 
-const serverPath = tryResolve("@quick-qui/model-server") ;
-
+const serverPath = tryResolve("@quick-qui/model-server");
 
 const server = serverPath
   ? spawn("npm", ["start"], {
@@ -45,8 +43,19 @@ const server = serverPath
     })
   : undefined;
 
-export const model: Promise<Model> = waitPort(params).then((_) =>
-  axios.get(`${modelUrl}/models/default`).then((_) => _.data)
+export const model: Promise<Model> = waitPort(modelServerEndpoint).then((_) =>
+  axios.get(`${modelServerEndpointUrl}/models/default`).then((_) => _.data)
+);
+//TODO 如何表示“不论有没有错？“
+export const logs: Promise<Log[]> = model.then(
+  (_) =>
+    axios
+      .get(`${modelServerEndpointUrl}/models/default/logs`)
+      .then((_) => _.data),
+  (_) =>
+    axios
+      .get(`${modelServerEndpointUrl}/models/default/logs`)
+      .then((_) => _.data)
 );
 
 exitHook(() => {
