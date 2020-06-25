@@ -6,6 +6,7 @@ import dote from "dotenv";
 import { modelLogs } from "./modelLogs";
 
 dote.config();
+// console.log = log
 
 prog
   .version("1.0.0")

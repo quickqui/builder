@@ -33,7 +33,7 @@
     "wait-port": "^0.2.7"
   },
   "devDependencies": {
-    "@types/node": "^12.12.39",
+    "@types/node": "^12.12.47",
     "ts-node": "^8.10.1",
     "typescript": "^3.9.2"
   },
