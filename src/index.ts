@@ -13,12 +13,10 @@ prog
   .logger(log)
   .command("build", "Build a runtime dir")
   .action(function (args, options, logger) {
-    return build();
+    return build().then((_) => process.exit(0));
   });
 prog.command("verify", "verify model").action(function (args, options, logger) {
-  return modelLogs();
-  //TODO 如何退出？跟caporal的机制有关
-  //.then(_=> process.exit(0))
+  return modelLogs().then((_) => process.exit(0));
 });
 //   console.log(prog)
 // console.log(prog.parse)

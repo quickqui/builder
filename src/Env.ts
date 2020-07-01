@@ -46,6 +46,7 @@ export async function ensureDistDir(implementation: Implementation) {
       initial: path.relative(builderPath, distPath),
     });
     env.distDir = answer.distDir;
+    return 
   }
 }
 export async function ensureLauncherName(
@@ -71,4 +72,5 @@ export async function ensureLauncherName(
   env.launcherType = implementationModel.implementations.find(
     (implementation) => implementation.name === answer.launcherName
   )!.parameters?.type;
+  return
 }

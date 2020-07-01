@@ -9,7 +9,7 @@ import { log, childProcessSync, notNil } from "./Util";
 import pkgDir from "pkg-dir";
 import { fail } from "assert";
 export async function build(): Promise<void> {
-  model.then(async (m) => {
+  return model.then(async (m) => {
     const implementationModel = withImplementationModel(m)?.implementationModel;
     if (implementationModel) {
       //TODO 询问生成package的各个字段 -  name、version……
@@ -83,6 +83,7 @@ export async function build(): Promise<void> {
       } else {
         fail(`no launcher found - name=${launcherName}`);
       }
+      return
 
       //MARK 不同的launcher type有不同的成品目录结构，所以有不同的builder步骤。
       //MARK 有待提高。目前来看builder的模型驱动没有体现，只能是与type的映射。有几个type，有几种builder。

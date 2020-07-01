@@ -10,9 +10,9 @@
   "author": "nielinjie <nielinjie@outlook.com>",
   "license": "ISC",
   "dependencies": {
-    "@quick-qui/launcher": "^1.3.2",
-    "@quick-qui/model-defines": "^2.4.4",
-    "@quick-qui/model-server": "^1.3.1",
+     "@quick-qui/launcher": "latest",
+    "@quick-qui/model-defines": "latest",
+    "@quick-qui/model-server": "latest",
     "@types/node": "^13.11.1",
     "dotenv": "^8.2.0"
   },
