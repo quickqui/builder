@@ -66,7 +66,7 @@ export async function ensureLauncherName(
         title: implementation.name,
         value: implementation.name,
       })),
-    initial: 1,
+    initial: 0,
   });
   env.launcherName = answer.launcherName;
   env.launcherType = implementationModel.implementations.find(
