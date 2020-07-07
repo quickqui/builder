@@ -32,6 +32,8 @@ export async function build(): Promise<void> {
       );
       log.debug(`launcher - ${JSON.stringify(launcherImplementation)}`);
       if (launcherImplementation) {
+        //FIXME 似乎这里有bug，没办法按照选择的launcher name来提示默认dist——dir，传进去的implementation是错的。
+        //NOTE 好似没有重现。
         await ensureDistDir(launcherImplementation);
 
         fs.ensureDirSync(path.resolve(".", env.distDir));
@@ -53,9 +55,7 @@ export async function build(): Promise<void> {
           );
         } else if (launcherType === "npm") {
           createNpmAndInstall("npm");
-
           const launch = launcherImplementation.parameters?.["launch"];
-
           const packageNames = launch
             ?.map((launchName) => {
               const implementation = implementationModel?.implementations?.find(
