@@ -1,6 +1,6 @@
 {
   "name": "@quick-qui/builder",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "main": "src/index.ts",
   "repository": "http://github.com/quickqui/builder",
   "bin": "./dist/index.js",
