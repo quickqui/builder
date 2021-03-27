@@ -3,6 +3,7 @@ import prompts from "prompts";
 import filenamify from "filenamify";
 import { Implementation, ImplementationModel } from "@quick-qui/model-defines";
 import path from "path";
+import { snakeCase } from 'change-case';
 
 export const env: {
   modelPath: string;
@@ -37,7 +38,7 @@ export async function ensureDistDir(implementation: Implementation) {
     const distPath = path.resolve(
       env.modelPath,
       "..",
-      filenamify(implementation.name + "_dist_dir")
+      filenamify(snakeCase(implementation.name + "_dist_dir"))
     );
     const answer = await prompts({
       type: "text",

@@ -81,3 +81,12 @@ export function notNil<TValue>(
 ): value is TValue {
   return value !== null && value !== undefined;
 }
+
+import { constantCase } from 'change-case'
+export function convertToEnv(object:object) :string{
+  let envFile = "";
+  for (const key of Object.keys(object)) {
+    envFile += `${constantCase(key)}=${object[key]}\n`;
+  }
+  return envFile;
+}

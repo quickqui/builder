@@ -17,11 +17,11 @@ export async function build(): Promise<void> {
 
       let launcherType = env.launcherType;
       let launcherName = env.launcherName;
-      log.info('in building')
+      log.info("in building");
       if (launcherType == undefined && launcherName == undefined) {
         await ensureLauncherName(implementationModel);
         launcherName = env.launcherName;
-        launcherType = env.launcherType
+        launcherType = env.launcherType;
       }
       const launcherImplementation = implementationModel.implementations.find(
         (implementation) =>
@@ -35,9 +35,8 @@ export async function build(): Promise<void> {
         //FIXME 似乎这里有bug，没办法按照选择的launcher name来提示默认dist——dir，传进去的implementation是错的。
         //NOTE 好似没有重现。
         await ensureDistDir(launcherImplementation);
-
         fs.ensureDirSync(path.resolve(".", env.distDir));
-
+        // fs.emptyDirSync(path.resolve(".", env.distDir));
         if (launcherType === "docker") {
           createNpmAndInstall();
           createModelJson(implementationModel);
@@ -55,19 +54,11 @@ export async function build(): Promise<void> {
           );
         } else if (launcherType === "npm") {
           createNpmAndInstall("npm");
-          const launch = launcherImplementation.parameters?.["launch"];
-          const packageNames = launch
-            ?.map((launchName) => {
-              const implementation = implementationModel?.implementations?.find(
-                (imp) => imp.name === launchName
-              );
-              if (implementation && implementation.runtime === "command") {
-                return implementation.parameters?.["packageName"];
-              } else {
-                return undefined;
-              }
-            })
-            .filter(notNil);
+          const packageNames = getPackageNamesFromLaunch(
+            launcherImplementation,
+            implementationModel
+          );
+
           if (packageNames.length > 0) {
             installPackages(packageNames);
           }
@@ -77,13 +68,29 @@ export async function build(): Promise<void> {
               (env.launcherName ? `\nLAUNCHER_NAME=${env.launcherName}` : "")
           );
           copyModelDir();
+        } else if (launcherType === "devNpm") {
+          createNpmAndInstall("npm");
+          const packageNames = getPackageNamesFromLaunch(
+            launcherImplementation,
+            implementationModel
+          );
+          if (packageNames.length > 0) {
+            installPackages(packageNames);
+          }
+          createModelJson(implementationModel);
+          createEnvFile(
+            `LAUNCHER_TYPE=${env.launcherType}` +
+              (env.launcherName ? `\nLAUNCHER_NAME=${env.launcherName}` : "") +
+              `\nDEV_MODEL_PATH=${path.resolve(env.modelPath)}`
+          );
+          copyModelDir('modelDirCopy');
         } else {
           fail(`launcher type not supported yet - ${launcherType}`);
         }
       } else {
         fail(`no launcher found - name=${launcherName}`);
       }
-      return
+      return;
 
       //MARK 不同的launcher type有不同的成品目录结构，所以有不同的builder步骤。
       //MARK 有待提高。目前来看builder的模型驱动没有体现，只能是与type的映射。有几个type，有几种builder。
@@ -105,12 +112,13 @@ export async function build(): Promise<void> {
 }
 
 function installPackages(packageNames: string[]) {
-  const npmPath = path.resolve(env.distDir);
+  const npmPath = path.resolve(".", env.distDir);
   log.info(`run npm install at - ${npmPath}`);
   childProcessSync("npm", ["install", ...packageNames], npmPath);
   log.info(`npm install finished`);
 }
 function createNpmAndInstall(subDir?: string) {
+  const npmPath = path.resolve(".", env.distDir);
   log.info(`copying startup script`);
   fs.copySync(
     path.resolve(
@@ -118,40 +126,44 @@ function createNpmAndInstall(subDir?: string) {
       "./templates",
       subDir ?? "default"
     ),
-    path.resolve(".", env.distDir)
+    npmPath
   );
 
   log.info(`startup script copied`);
-  const npmPath = path.resolve(env.distDir);
   log.info(`run npm install at - ${npmPath}`);
   childProcessSync("npm", ["install"], npmPath);
   log.info(`npm install finished`);
 }
 
-function copyModelDir() {
+function copyModelDir(targetDirName:string="modelDir") {
   const modelPath = env.modelPath;
   log.info(`copying model dir - ${modelPath}`);
   if (fs.pathExists(path.resolve(modelPath, "model"))) {
-    const distModelDir = path.resolve(env.distDir, "modelDir", "model");
+    const distModelDir = path.resolve(env.distDir, targetDirName, "model");
     fs.ensureDirSync(distModelDir);
     fs.copySync(path.resolve(modelPath, "model"), distModelDir);
   }
   if (fs.pathExists(path.resolve(modelPath, "dist"))) {
-    const distDistDir = path.resolve(env.distDir, "modelDir", "dist");
+    const distDistDir = path.resolve(env.distDir, targetDirName, "dist");
     fs.ensureDirSync(distDistDir);
     fs.copySync(path.resolve(modelPath, "dist"), distDistDir);
   }
   if (fs.pathExists(path.resolve(modelPath, "package.json"))) {
-    const distPackage = path.resolve(env.distDir, "modelDir", "package.json");
+    const distPackage = path.resolve(
+      env.distDir,
+      targetDirName,
+      "package.json"
+    );
     fs.copySync(path.resolve(modelPath, "package.json"), distPackage);
   }
   log.info(`model dir copied`);
 
-  const runInstallPath = path.resolve(env.distDir, "modelDir");
+  const runInstallPath = path.resolve(env.distDir, targetDirName);
   log.info(`run npm install at - ${runInstallPath}`);
-  childProcessSync("npm", ["install"], runInstallPath);
+  childProcessSync("npm", ["install", "--legacy-peer-deps"], runInstallPath);
   log.info(`npm install finished`);
 }
+
 
 function createModelJson(implementationModel) {
   const json = JSON.stringify(implementationModel, undefined, 2);
@@ -166,4 +178,23 @@ function createEnvFile(obj: string) {
   log.info(`writing .env file - ${filePathEnv}`);
   fs.writeFileSync(filePathEnv, `${obj}\nDEBUG=*quick*\nDEBUG_LEVEL=INFO`);
   log.info(`.env file write done`);
+}
+function getPackageNamesFromLaunch(
+  launcherImplementation,
+  implementationModel
+) {
+  const launch = launcherImplementation.parameters?.["launch"];
+
+  return launch
+    ?.map((launchName) => {
+      const implementation = implementationModel?.implementations?.find(
+        (imp) => imp.name === launchName
+      );
+      if (implementation && implementation.runtime === "command") {
+        return implementation.parameters?.["packageName"];
+      } else {
+        return undefined;
+      }
+    })
+    .filter(notNil);
 }
