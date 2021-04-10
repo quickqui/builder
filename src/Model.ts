@@ -46,17 +46,12 @@ const server = serverPath
 export const model: Promise<Model> = waitPort(modelServerEndpoint).then((_) =>
   axios.get(`${modelServerEndpointUrl}/models/default`).then((_) => _.data)
 );
-//TODO 如何表示“不论有没有错？“
-export const logs: Promise<Log[]> = model.then(
-  (_) =>
-    axios
-      .get(`${modelServerEndpointUrl}/models/default/logs`)
-      .then((_) => _.data),
-  (_) =>
-    axios
-      .get(`${modelServerEndpointUrl}/models/default/logs`)
-      .then((_) => _.data)
-);
+
+const readLogs = (_) =>
+  axios
+    .get(`${modelServerEndpointUrl}/models/default/logs`)
+    .then((_) => _.data);
+export const logs: Promise<Log[]> = model.then(readLogs, readLogs);
 
 exitHook(() => {
   log.info(`killing model server...`);

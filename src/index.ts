@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-
 import dote from "dotenv";
 dote.config();
 
@@ -19,14 +18,14 @@ prog
 prog.command("verify", "verify model").action(function (args, options, logger) {
   return modelLogs().then((_) => process.exit(0));
 });
-prog.command("server","Start a model server").action(function (args, options,logger){
-  return modelLogs().then((_) => {
-    //do nothing.
+prog
+  .command("server", "Start a model server")
+  .action(function (args, options, logger) {
+    return modelLogs().then((_) => {
+      //do nothing.
+    });
   });
-})
-prog.command('devRun','run a dev enumeration').action(function (args, options,logger){
 
-})
 //   console.log(prog)
 // console.log(prog.parse)
 prog.parse(process.argv);

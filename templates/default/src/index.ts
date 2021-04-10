@@ -1,8 +1,8 @@
 import env from "dotenv";
 env.config();
 
-import implementationModel from "../implementationModel.json";
+import launcherImplementation from "../launcherImplementation.json";
 import { launch } from "@quick-qui/launcher";
-import { ImplementationModel } from '@quick-qui/model-defines';
+import { Implementation } from "@quick-qui/model-defines";
 
-launch(implementationModel as ImplementationModel);
+launch(launcherImplementation as Implementation);

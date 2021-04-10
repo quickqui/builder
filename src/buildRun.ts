@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 
 import { model } from "./Model";
-import { withImplementationModel } from "@quick-qui/model-defines";
+import {
+  withImplementationModel,
+  Implementation,
+} from "@quick-qui/model-defines";
 import { env, ensureLauncherName, ensureDistDir } from "./Env";
 import path from "path";
 import fs from "fs-extra";
@@ -12,8 +15,6 @@ export async function build(): Promise<void> {
   return model.then(async (m) => {
     const implementationModel = withImplementationModel(m)?.implementationModel;
     if (implementationModel) {
-      //TODO 询问生成package的各个字段 -  name、version……
-      //MARK npm init有这一步。
 
       let launcherType = env.launcherType;
       let launcherName = env.launcherName;
@@ -32,14 +33,12 @@ export async function build(): Promise<void> {
       );
       log.debug(`launcher - ${JSON.stringify(launcherImplementation)}`);
       if (launcherImplementation) {
-        //FIXME 似乎这里有bug，没办法按照选择的launcher name来提示默认dist——dir，传进去的implementation是错的。
-        //NOTE 好似没有重现。
         await ensureDistDir(launcherImplementation);
         fs.ensureDirSync(path.resolve(".", env.distDir));
         // fs.emptyDirSync(path.resolve(".", env.distDir));
         if (launcherType === "docker") {
           createNpmAndInstall();
-          createModelJson(implementationModel);
+          createModelJson(launcherImplementation);
           createEnvFile(
             `LAUNCHER_TYPE=${env.launcherType}` +
               (env.launcherName ? `\nLAUNCHER_NAME=${env.launcherName}` : "")
@@ -47,7 +46,7 @@ export async function build(): Promise<void> {
           copyModelDir();
         } else if (launcherType === "raw") {
           createNpmAndInstall();
-          createModelJson(implementationModel);
+          createModelJson(launcherImplementation);
           createEnvFile(
             `LAUNCHER_TYPE=${env.launcherType}` +
               (env.launcherName ? `\nLAUNCHER_NAME=${env.launcherName}` : "")
@@ -62,7 +61,7 @@ export async function build(): Promise<void> {
           if (packageNames.length > 0) {
             installPackages(packageNames);
           }
-          createModelJson(implementationModel);
+          createModelJson(launcherImplementation);
           createEnvFile(
             `LAUNCHER_TYPE=${env.launcherType}` +
               (env.launcherName ? `\nLAUNCHER_NAME=${env.launcherName}` : "")
@@ -77,13 +76,13 @@ export async function build(): Promise<void> {
           if (packageNames.length > 0) {
             installPackages(packageNames);
           }
-          createModelJson(implementationModel);
+          createModelJson(launcherImplementation);
           createEnvFile(
             `LAUNCHER_TYPE=${env.launcherType}` +
               (env.launcherName ? `\nLAUNCHER_NAME=${env.launcherName}` : "") +
               `\nDEV_MODEL_PATH=${path.resolve(env.modelPath)}`
           );
-          copyModelDir('modelDirCopy');
+          copyModelDir("modelDirCopy");
         } else {
           fail(`launcher type not supported yet - ${launcherType}`);
         }
@@ -128,14 +127,16 @@ function createNpmAndInstall(subDir?: string) {
     ),
     npmPath
   );
-
+  log.info(`run npm init at - ${npmPath}`);
+  childProcessSync("npm", ["init"], npmPath);
+  log.info(`npm init ran - ${npmPath}`);
   log.info(`startup script copied`);
   log.info(`run npm install at - ${npmPath}`);
   childProcessSync("npm", ["install"], npmPath);
   log.info(`npm install finished`);
 }
 
-function copyModelDir(targetDirName:string="modelDir") {
+function copyModelDir(targetDirName: string = "modelDir") {
   const modelPath = env.modelPath;
   log.info(`copying model dir - ${modelPath}`);
   if (fs.pathExists(path.resolve(modelPath, "model"))) {
@@ -157,20 +158,31 @@ function copyModelDir(targetDirName:string="modelDir") {
     fs.copySync(path.resolve(modelPath, "package.json"), distPackage);
   }
   log.info(`model dir copied`);
-
   const runInstallPath = path.resolve(env.distDir, targetDirName);
+
   log.info(`run npm install at - ${runInstallPath}`);
   childProcessSync("npm", ["install", "--legacy-peer-deps"], runInstallPath);
   log.info(`npm install finished`);
 }
 
+function createModelJson(launcher: Implementation) {
+  // const json = JSON.stringify(implementationModel, undefined, 2);
+  // const filePath = path.resolve(".", env.distDir, "implementationModel.json");
+  // log.info(`writing implementation model json - ${filePath} ...`);
+  // fs.writeFileSync(filePath, json);
+  // log.info(`implementation model json write done`);
 
-function createModelJson(implementationModel) {
-  const json = JSON.stringify(implementationModel, undefined, 2);
-  const filePath = path.resolve(".", env.distDir, "implementationModel.json");
-  log.info(`writing implementation model json - ${filePath} ...`);
-  fs.writeFileSync(filePath, json);
-  log.info(`implementation model json write done`);
+  if (launcher) {
+    const jsonLauncher = JSON.stringify(launcher, undefined, 2);
+    const filePathL = path.resolve(
+      ".",
+      env.distDir,
+      "launcherImplementation.json"
+    );
+    log.info(`writing launcher implementation model json - ${filePathL} ...`);
+    fs.writeFileSync(filePathL, jsonLauncher);
+    log.info(`launcher implementation model json write done`);
+  }
 }
 
 function createEnvFile(obj: string) {
