@@ -12,8 +12,10 @@ prog
   .version("1.0.0")
   .logger(log)
   .command("build", "Build a runtime dir")
+  .argument("[search]", "search in implementation name")
+  .option("--yes [yesFlag]", "yes flag pass to npm init")
   .action(function (args, options, logger) {
-    return build().then((_) => process.exit(0));
+    return build(args,options).then((_) => process.exit(0));
   });
 prog.command("verify", "verify model").action(function (args, options, logger) {
   return modelLogs().then((_) => process.exit(0));

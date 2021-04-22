@@ -11,7 +11,9 @@ import { log, notNil } from "./Util";
 import { fail } from "assert";
 import { installPackages, createNpmAndInstall, createModelJson, createEnvFile, copyModelDir } from "./buildMethods";
 
-export async function build(): Promise<void> {
+export async function build(args,options): Promise<void> {
+  const yesFlag=options.yes??false
+  const searchIn = args.search 
   return model.then(async (m) => {
     const implementationModel = withImplementationModel(m)?.implementationModel;
     if (implementationModel) {
@@ -19,7 +21,7 @@ export async function build(): Promise<void> {
       let launcherName = env.launcherName;
       log.info("in building");
       if (launcherType == undefined && launcherName == undefined) {
-        await ensureLauncherName(implementationModel);
+        await ensureLauncherName(searchIn,yesFlag,implementationModel);
         launcherName = env.launcherName;
         launcherType = env.launcherType;
       }
@@ -32,11 +34,11 @@ export async function build(): Promise<void> {
       );
       log.debug(`launcher - ${JSON.stringify(launcherImplementation)}`);
       if (launcherImplementation) {
-        await ensureDistDir(launcherImplementation);
+        await ensureDistDir(yesFlag,launcherImplementation);
         fs.ensureDirSync(path.resolve(".", env.distDir));
         // fs.emptyDirSync(path.resolve(".", env.distDir));
         if (launcherType === "docker") {
-          createNpmAndInstall();
+          createNpmAndInstall(yesFlag);
           createModelJson(launcherImplementation);
           createEnvFile(
             `LAUNCHER_TYPE=${env.launcherType}` +
@@ -44,14 +46,14 @@ export async function build(): Promise<void> {
           );
           copyModelDir();
         } else if (launcherType === "raw") {
-          createNpmAndInstall();
+          createNpmAndInstall(yesFlag);
           createModelJson(launcherImplementation);
           createEnvFile(
             `LAUNCHER_TYPE=${env.launcherType}` +
               (env.launcherName ? `\nLAUNCHER_NAME=${env.launcherName}` : "")
           );
         } else if (launcherType === "npm") {
-          createNpmAndInstall("npm");
+          createNpmAndInstall(yesFlag,"npm");
           const packageNames = getPackageNamesFromLaunch(
             launcherImplementation,
             implementationModel
@@ -67,7 +69,7 @@ export async function build(): Promise<void> {
           );
           copyModelDir();
         } else if (launcherType === "devNpm") {
-          createNpmAndInstall("npm");
+          createNpmAndInstall(yesFlag,"npm");
           const packageNames = getPackageNamesFromLaunch(
             launcherImplementation,
             implementationModel
@@ -83,7 +85,7 @@ export async function build(): Promise<void> {
           );
           copyModelDir("modelDirCopy");
         } else if (launcherType === "flatNpm") {
-          createNpmAndInstall("npm");
+          createNpmAndInstall(yesFlag,"npm");
           const packageNames = getPackageNamesFromLaunch(
             launcherImplementation,
             implementationModel

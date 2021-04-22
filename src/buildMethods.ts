@@ -13,7 +13,7 @@ export function installPackages(packageNames: string[]) {
   log.info(`npm install finished`);
 }
 
-export function createNpmAndInstall(subDir?: string) {
+export function createNpmAndInstall(yesFlag:boolean,subDir?: string) {
   const npmPath = path.resolve(".", env.distDir);
   log.info(`copying startup script`);
   fs.copySync(
@@ -25,7 +25,7 @@ export function createNpmAndInstall(subDir?: string) {
     npmPath
   );
   log.info(`run npm init at - ${npmPath}`);
-  childProcessSync("npm", ["init"], npmPath);
+  childProcessSync("npm", yesFlag?["init","--yes"]:["init"], npmPath);
   log.info(`npm init ran - ${npmPath}`);
   log.info(`startup script copied`);
   log.info(`run npm install at - ${npmPath}`);
