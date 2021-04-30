@@ -1,19 +1,23 @@
 #!/usr/bin/env node
 
 import { model } from "./Model";
-import {
-  withImplementationModel,
-} from "@quick-qui/model-defines";
+import { withImplementationModel } from "@quick-qui/model-defines";
 import { env, ensureLauncherName, ensureDistDir } from "./Env";
 import path from "path";
 import fs from "fs-extra";
 import { log, notNil } from "./Util";
 import { fail } from "assert";
-import { installPackages, createNpmAndInstall, createModelJson, createEnvFile, copyModelDir } from "./buildMethods";
+import {
+  installPackages,
+  createNpmAndInstall,
+  createModelJson,
+  createEnvFile,
+  copyModelDir,
+} from "./buildMethods";
 
-export async function build(args,options): Promise<void> {
-  const yesFlag=options.yes??false
-  const searchIn = args.search 
+export async function build(args, options, onlyPush = false): Promise<void> {
+  const yesFlag = options.yes ?? false;
+  const searchIn = args.search;
   return model.then(async (m) => {
     const implementationModel = withImplementationModel(m)?.implementationModel;
     if (implementationModel) {
@@ -21,7 +25,7 @@ export async function build(args,options): Promise<void> {
       let launcherName = env.launcherName;
       log.info("in building");
       if (launcherType == undefined && launcherName == undefined) {
-        await ensureLauncherName(searchIn,yesFlag,implementationModel);
+        await ensureLauncherName(searchIn, yesFlag, implementationModel);
         launcherName = env.launcherName;
         launcherType = env.launcherType;
       }
@@ -34,72 +38,86 @@ export async function build(args,options): Promise<void> {
       );
       log.debug(`launcher - ${JSON.stringify(launcherImplementation)}`);
       if (launcherImplementation) {
-        await ensureDistDir(yesFlag,launcherImplementation);
+        await ensureDistDir(yesFlag, launcherImplementation);
         fs.ensureDirSync(path.resolve(".", env.distDir));
         // fs.emptyDirSync(path.resolve(".", env.distDir));
         if (launcherType === "docker") {
-          createNpmAndInstall(yesFlag);
-          createModelJson(launcherImplementation);
-          createEnvFile(
-            `LAUNCHER_TYPE=${env.launcherType}` +
-              (env.launcherName ? `\nLAUNCHER_NAME=${env.launcherName}` : "")
-          );
-          copyModelDir();
+          if (!onlyPush) {
+            createNpmAndInstall(yesFlag);
+            createModelJson(launcherImplementation);
+            createEnvFile(
+              `LAUNCHER_TYPE=${env.launcherType}` +
+                (env.launcherName ? `\nLAUNCHER_NAME=${env.launcherName}` : "")
+            );
+          }
+          copyModelDir(undefined, onlyPush);
         } else if (launcherType === "raw") {
-          createNpmAndInstall(yesFlag);
-          createModelJson(launcherImplementation);
-          createEnvFile(
-            `LAUNCHER_TYPE=${env.launcherType}` +
-              (env.launcherName ? `\nLAUNCHER_NAME=${env.launcherName}` : "")
-          );
+          if (!onlyPush) {
+            createNpmAndInstall(yesFlag);
+            createModelJson(launcherImplementation);
+            createEnvFile(
+              `LAUNCHER_TYPE=${env.launcherType}` +
+                (env.launcherName ? `\nLAUNCHER_NAME=${env.launcherName}` : "")
+            );
+          }
         } else if (launcherType === "npm") {
-          createNpmAndInstall(yesFlag,"npm");
-          const packageNames = getPackageNamesFromLaunch(
-            launcherImplementation,
-            implementationModel
-          );
+          if (!onlyPush) {
+            createNpmAndInstall(yesFlag, "npm");
+            const packageNames = getPackageNamesFromLaunch(
+              launcherImplementation,
+              implementationModel
+            );
 
-          if (packageNames.length > 0) {
-            installPackages(packageNames);
+            if (packageNames.length > 0) {
+              installPackages(packageNames);
+            }
+            createModelJson(launcherImplementation);
+            createEnvFile(
+              `LAUNCHER_TYPE=${env.launcherType}` +
+                (env.launcherName ? `\nLAUNCHER_NAME=${env.launcherName}` : "")
+            );
           }
-          createModelJson(launcherImplementation);
-          createEnvFile(
-            `LAUNCHER_TYPE=${env.launcherType}` +
-              (env.launcherName ? `\nLAUNCHER_NAME=${env.launcherName}` : "")
-          );
-          copyModelDir();
+          copyModelDir(undefined, onlyPush);
         } else if (launcherType === "devNpm") {
-          createNpmAndInstall(yesFlag,"npm");
-          const packageNames = getPackageNamesFromLaunch(
-            launcherImplementation,
-            implementationModel
-          );
-          if (packageNames.length > 0) {
-            installPackages(packageNames);
+          if (!onlyPush) {
+            createNpmAndInstall(yesFlag, "npm");
+            const packageNames = getPackageNamesFromLaunch(
+              launcherImplementation,
+              implementationModel
+            );
+            if (packageNames.length > 0) {
+              installPackages(packageNames);
+            }
+            createModelJson(launcherImplementation);
+            createEnvFile(
+              `LAUNCHER_TYPE=${env.launcherType}` +
+                (env.launcherName
+                  ? `\nLAUNCHER_NAME=${env.launcherName}`
+                  : "") +
+                `\nDEV_MODEL_PATH=${path.resolve(env.modelPath)}`
+            );
           }
-          createModelJson(launcherImplementation);
-          createEnvFile(
-            `LAUNCHER_TYPE=${env.launcherType}` +
-              (env.launcherName ? `\nLAUNCHER_NAME=${env.launcherName}` : "") +
-              `\nDEV_MODEL_PATH=${path.resolve(env.modelPath)}`
-          );
-          copyModelDir("modelDirCopy");
+          copyModelDir("modelDirCopy", onlyPush);
         } else if (launcherType === "flatNpm") {
-          createNpmAndInstall(yesFlag,"npm");
-          const packageNames = getPackageNamesFromLaunch(
-            launcherImplementation,
-            implementationModel
-          );
-          if (packageNames.length > 0) {
-            installPackages(packageNames);
+          if (!onlyPush) {
+            createNpmAndInstall(yesFlag, "npm");
+            const packageNames = getPackageNamesFromLaunch(
+              launcherImplementation,
+              implementationModel
+            );
+            if (packageNames.length > 0) {
+              installPackages(packageNames);
+            }
+            createModelJson(launcherImplementation);
+            createEnvFile(
+              `LAUNCHER_TYPE=${env.launcherType}` +
+                (env.launcherName
+                  ? `\nLAUNCHER_NAME=${env.launcherName}`
+                  : "") +
+                `\nDEV_MODEL_PATH=${path.resolve(env.modelPath)}`
+            );
           }
-          createModelJson(launcherImplementation);
-          createEnvFile(
-            `LAUNCHER_TYPE=${env.launcherType}` +
-              (env.launcherName ? `\nLAUNCHER_NAME=${env.launcherName}` : "") +
-              `\nDEV_MODEL_PATH=${path.resolve(env.modelPath)}`
-          );
-          copyModelDir(".");
+          copyModelDir(".", onlyPush);
         } else {
           fail(`launcher type not supported yet - ${launcherType}`);
         }
@@ -119,7 +137,6 @@ export async function build(args,options): Promise<void> {
       //MARK    index.js
       //MARK    modelDir
 
-
       //TODO 实现层可能需要一个hook，比如front需要build 到生产环境。
       //TODO front 的 npm run build需要在copy以后运行？
 
@@ -127,7 +144,6 @@ export async function build(args,options): Promise<void> {
     }
   });
 }
-
 
 function getPackageNamesFromLaunch(
   launcherImplementation,

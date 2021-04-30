@@ -13,7 +13,7 @@ export function installPackages(packageNames: string[]) {
   log.info(`npm install finished`);
 }
 
-export function createNpmAndInstall(yesFlag:boolean,subDir?: string) {
+export function createNpmAndInstall(yesFlag: boolean, subDir?: string) {
   const npmPath = path.resolve(".", env.distDir);
   log.info(`copying startup script`);
   fs.copySync(
@@ -25,14 +25,17 @@ export function createNpmAndInstall(yesFlag:boolean,subDir?: string) {
     npmPath
   );
   log.info(`run npm init at - ${npmPath}`);
-  childProcessSync("npm", yesFlag?["init","--yes"]:["init"], npmPath);
+  childProcessSync("npm", yesFlag ? ["init", "--yes"] : ["init"], npmPath);
   log.info(`npm init ran - ${npmPath}`);
   log.info(`startup script copied`);
   log.info(`run npm install at - ${npmPath}`);
   childProcessSync("npm", ["install"], npmPath);
   log.info(`npm install finished`);
 }
-export function copyModelDir(targetDirName: string = "modelDir") {
+export function copyModelDir(
+  targetDirName: string = "modelDir",
+  onlyPush = false
+) {
   const modelPath = env.modelPath;
   log.info(`copying model dir - ${modelPath}`);
   if (fs.pathExists(path.resolve(modelPath, "model"))) {
@@ -45,32 +48,35 @@ export function copyModelDir(targetDirName: string = "modelDir") {
     fs.ensureDirSync(distDistDir);
     fs.copySync(path.resolve(modelPath, "dist"), distDistDir);
   }
-  if (fs.pathExists(path.resolve(modelPath, "package.json"))) {
-    const distPackage = path.resolve(
-      env.distDir,
-      targetDirName,
-      "package.json"
-    );
-    //to merge package.json
-
-    if (fs.pathExists(distPackage)) {
-      const dst = fs.readFileSync(distPackage);
-      const src = fs.readFileSync(path.resolve(modelPath, "package.json"));
-      log.info(dst)
-      log.info(src)
-      const merged = merge(src,dst);
-      log.info(merged);
-      fs.writeFileSync(distPackage, merged);
-    } else {
-      fs.copySync(path.resolve(modelPath, "package.json"), distPackage);
+  if (!onlyPush) {
+    if (fs.pathExists(path.resolve(modelPath, "package.json"))) {
+      const distPackage = path.resolve(
+        env.distDir,
+        targetDirName,
+        "package.json"
+      );
+      log.info(`merge package`);
+      //to merge package.json
+      if (fs.pathExists(distPackage)) {
+        log.info(`merge package.json`);
+        const dst = fs.readFileSync(distPackage);
+        const src = fs.readFileSync(path.resolve(modelPath, "package.json"));
+        const merged = merge(src, dst);
+        fs.writeFileSync(distPackage, merged);
+      } else {
+        log.info(`copy package.json`);
+        fs.copySync(path.resolve(modelPath, "package.json"), distPackage);
+      }
     }
   }
   log.info(`model dir copied`);
-  const runInstallPath = path.resolve(env.distDir, targetDirName);
+  if (!onlyPush) {
+    const runInstallPath = path.resolve(env.distDir, targetDirName);
 
-  log.info(`run npm install at - ${runInstallPath}`);
-  childProcessSync("npm", ["install", "--legacy-peer-deps"], runInstallPath);
-  log.info(`npm install finished`);
+    log.info(`run npm install at - ${runInstallPath}`);
+    childProcessSync("npm", ["install", "--legacy-peer-deps"], runInstallPath);
+    log.info(`npm install finished`);
+  }
 }
 
 export function createModelJson(launcher: Implementation) {
