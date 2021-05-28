@@ -1,10 +1,11 @@
 import { env } from "./Env";
 import path from "path";
-import { log, childProcessSync } from "./Util";
+import { log, childProcessSync, packageBasePath, notNil } from "./Util";
 import fs from "fs-extra";
 import pkgDir from "pkg-dir";
 import { Implementation } from "@quick-qui/model-defines";
 import merge from "package-merge-lodash-4";
+import assert from "assert";
 
 export function installPackages(packageNames: string[]) {
   const npmPath = path.resolve(".", env.distDir);
@@ -98,4 +99,54 @@ export function createEnvFile(obj: string) {
   log.info(`writing .env file - ${filePathEnv}`);
   fs.writeFileSync(filePathEnv, `${obj}\nDEBUG=*quick*\nDEBUG_LEVEL=INFO`);
   log.info(`.env file write done`);
+}
+export function runHooks(launcherImplementation, implementationModel,buildingEnv:object) {
+  const hookImplementations = getLifeCycleFromLaunch(
+    "building",
+    launcherImplementation,
+    implementationModel
+  );
+  hookImplementations.forEach((hookImplementation) => {
+    log.info("start run building hook for  - " + hookImplementation.name);
+    const hook = hookImplementation.lifeCycle?.["building"];
+    if (hook) {
+      log.info("start run building hook - " + JSON.stringify(hook));
+      const { command, args, cwd = "." } = hook;
+      assert(hookImplementation.parameters?.packageName!==undefined ,'parameters.packageName can not be undefined');
+      const cwdPath = path.resolve(
+        packageBasePath(
+          env.distDir,
+          hookImplementation.parameters?.packageName
+        ),
+        cwd
+      );
+      log.debug('cwdPath - '+cwdPath)
+      log.debug('buildingEnv - '+ JSON.stringify(buildingEnv));
+      log.info(childProcessSync(command, args, cwdPath, buildingEnv));
+      log.info("run building hook finished- " + JSON.stringify(hook));
+    }
+  });
+}
+function getLifeCycleFromLaunch(
+  lifeCycleName: string,
+  launcherImplementation,
+  implementationModel
+): Implementation[] {
+  const launch = launcherImplementation.parameters?.["launch"];
+
+  return launch
+    ?.map((launchName) => {
+      const implementation = implementationModel?.implementations?.find(
+        (imp) => imp.name === launchName
+      );
+      if (
+        implementation &&
+        implementation.lifeCycle?.[lifeCycleName] !== undefined
+      ) {
+        return implementation;
+      } else {
+        return undefined;
+      }
+    })
+    .filter(notNil);
 }

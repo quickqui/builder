@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 
 import { model } from "./Model";
-import { withImplementationModel } from "@quick-qui/model-defines";
+import {
+  Implementation,
+  withImplementationModel,
+} from "@quick-qui/model-defines";
 import { env, ensureLauncherName, ensureDistDir } from "./Env";
 import path from "path";
 import fs from "fs-extra";
-import { log, notNil } from "./Util";
+import { childProcessSync, log, notNil, packageBasePath } from "./Util";
 import { fail } from "assert";
 import {
   installPackages,
@@ -13,6 +16,7 @@ import {
   createModelJson,
   createEnvFile,
   copyModelDir,
+  runHooks,
 } from "./buildMethods";
 
 export async function build(args, options, onlyPush = false): Promise<void> {
@@ -29,13 +33,21 @@ export async function build(args, options, onlyPush = false): Promise<void> {
         launcherName = env.launcherName;
         launcherType = env.launcherType;
       }
-      const launcherImplementation = implementationModel.implementations.find(
-        (implementation) =>
-          (implementation.abstract ?? false) !== true &&
-          implementation.runtime === "launcher" &&
-          ((launcherName ? implementation.name === launcherName : false) ||
-            launcherType === implementation.parameters?.type)
-      );
+      log.debug(env.launcherName);
+      log.debug(env.launcherType);
+      const launcherImplementation =
+        implementationModel.implementations.find(
+          (implementation) =>
+            (implementation.abstract ?? false) !== true &&
+            implementation.runtime === "launcher" &&
+            (launcherName ? implementation.name === launcherName : false)
+        ) ??
+        implementationModel.implementations.find(
+          (implementation) =>
+            (implementation.abstract ?? false) !== true &&
+            implementation.runtime === "launcher" &&
+            launcherType === implementation.parameters?.type
+        );
       log.debug(`launcher - ${JSON.stringify(launcherImplementation)}`);
       if (launcherImplementation) {
         await ensureDistDir(yesFlag, launcherImplementation);
@@ -100,6 +112,7 @@ export async function build(args, options, onlyPush = false): Promise<void> {
           copyModelDir("modelDirCopy", onlyPush);
         } else if (launcherType === "flatNpm") {
           if (!onlyPush) {
+            //TODO flatNpm的情况下， npm install不需要两次。
             createNpmAndInstall(yesFlag, "npm");
             const packageNames = getPackageNamesFromLaunch(
               launcherImplementation,
@@ -118,6 +131,7 @@ export async function build(args, options, onlyPush = false): Promise<void> {
             );
           }
           copyModelDir(".", onlyPush);
+          runHooks(launcherImplementation, implementationModel,{'MODEL_PATH':path.resolve(env.distDir,'.')});
         } else {
           fail(`launcher type not supported yet - ${launcherType}`);
         }
@@ -148,7 +162,7 @@ export async function build(args, options, onlyPush = false): Promise<void> {
 function getPackageNamesFromLaunch(
   launcherImplementation,
   implementationModel
-) {
+): string[] {
   const launch = launcherImplementation.parameters?.["launch"];
 
   return launch
