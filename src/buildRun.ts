@@ -1,23 +1,16 @@
 #!/usr/bin/env node
 
 import { model } from "./Model";
-import {
-  Implementation,
-  withImplementationModel,
-} from "@quick-qui/model-defines";
+import { withImplementationModel } from "@quick-qui/model-defines";
 import { env, ensureLauncherName, ensureDistDir } from "./Env";
 import path from "path";
 import fs from "fs-extra";
-import { childProcessSync, log, notNil, packageBasePath } from "./Util";
+import { log, notNil } from "./Util";
 import { fail } from "assert";
-import {
-  installPackages,
-  createNpmAndInstall,
-  createModelJson,
-  createEnvFile,
-  copyModelDir,
-  runHooks,
-} from "./buildMethods";
+import { flatNpmBuild } from "./flatNpmBuildRun";
+import { npmBuildRun } from "./npmBuildRun";
+import { devNpmBuildRun } from "./devNpmBuildRun";
+import { rawBuildRun } from "./rawBuildRun";
 
 export async function build(args, options, onlyPush = false): Promise<void> {
   const yesFlag = options.yes ?? false;
@@ -54,84 +47,30 @@ export async function build(args, options, onlyPush = false): Promise<void> {
         fs.ensureDirSync(path.resolve(".", env.distDir));
         // fs.emptyDirSync(path.resolve(".", env.distDir));
         if (launcherType === "docker") {
-          if (!onlyPush) {
-            createNpmAndInstall(yesFlag);
-            createModelJson(launcherImplementation);
-            createEnvFile(
-              `LAUNCHER_TYPE=${env.launcherType}` +
-                (env.launcherName ? `\nLAUNCHER_NAME=${env.launcherName}` : "")
-            );
-          }
-          copyModelDir(undefined, onlyPush);
+          fail(`launcher type not supported yet - ${launcherType}`);
         } else if (launcherType === "raw") {
-          if (!onlyPush) {
-            createNpmAndInstall(yesFlag);
-            createModelJson(launcherImplementation);
-            createEnvFile(
-              `LAUNCHER_TYPE=${env.launcherType}` +
-                (env.launcherName ? `\nLAUNCHER_NAME=${env.launcherName}` : "")
-            );
-          }
+          rawBuildRun(onlyPush, yesFlag, launcherImplementation);
         } else if (launcherType === "npm") {
-          if (!onlyPush) {
-            createNpmAndInstall(yesFlag, "npm");
-            const packageNames = getPackageNamesFromLaunch(
-              launcherImplementation,
-              implementationModel
-            );
-
-            if (packageNames.length > 0) {
-              installPackages(packageNames);
-            }
-            createModelJson(launcherImplementation);
-            createEnvFile(
-              `LAUNCHER_TYPE=${env.launcherType}` +
-                (env.launcherName ? `\nLAUNCHER_NAME=${env.launcherName}` : "")
-            );
-          }
-          copyModelDir(undefined, onlyPush);
+          npmBuildRun(
+            onlyPush,
+            yesFlag,
+            launcherImplementation,
+            implementationModel
+          );
         } else if (launcherType === "devNpm") {
-          if (!onlyPush) {
-            createNpmAndInstall(yesFlag, "npm");
-            const packageNames = getPackageNamesFromLaunch(
-              launcherImplementation,
-              implementationModel
-            );
-            if (packageNames.length > 0) {
-              installPackages(packageNames);
-            }
-            createModelJson(launcherImplementation);
-            createEnvFile(
-              `LAUNCHER_TYPE=${env.launcherType}` +
-                (env.launcherName
-                  ? `\nLAUNCHER_NAME=${env.launcherName}`
-                  : "") +
-                `\nDEV_MODEL_PATH=${path.resolve(env.modelPath)}`
-            );
-          }
-          copyModelDir("modelDirCopy", onlyPush);
+          devNpmBuildRun(
+            onlyPush,
+            yesFlag,
+            launcherImplementation,
+            implementationModel
+          );
         } else if (launcherType === "flatNpm") {
-          if (!onlyPush) {
-            //TODO flatNpm的情况下， npm install不需要两次。
-            createNpmAndInstall(yesFlag, "npm");
-            const packageNames = getPackageNamesFromLaunch(
-              launcherImplementation,
-              implementationModel
-            );
-            if (packageNames.length > 0) {
-              installPackages(packageNames);
-            }
-            createModelJson(launcherImplementation);
-            createEnvFile(
-              `LAUNCHER_TYPE=${env.launcherType}` +
-                (env.launcherName
-                  ? `\nLAUNCHER_NAME=${env.launcherName}`
-                  : "") +
-                `\nDEV_MODEL_PATH=${path.resolve(env.modelPath)}`
-            );
-          }
-          copyModelDir(".", onlyPush);
-          runHooks(launcherImplementation, implementationModel,{'MODEL_PATH':path.resolve(env.distDir,'.')});
+          flatNpmBuild(
+            onlyPush,
+            yesFlag,
+            launcherImplementation,
+            implementationModel
+          );
         } else {
           fail(`launcher type not supported yet - ${launcherType}`);
         }
@@ -146,7 +85,6 @@ export async function build(args, options, onlyPush = false): Promise<void> {
       //MARK    index.js launch()
       //MARK type=docker modelDir被mount到每个container
       //MARK    index.js
-      //MARK    modelDir
       //MARK type=npm
       //MARK    index.js
       //MARK    modelDir
@@ -159,7 +97,7 @@ export async function build(args, options, onlyPush = false): Promise<void> {
   });
 }
 
-function getPackageNamesFromLaunch(
+export function getPackageNamesFromLaunch(
   launcherImplementation,
   implementationModel
 ): string[] {
