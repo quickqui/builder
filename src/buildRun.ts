@@ -50,20 +50,20 @@ export async function build(args, options, onlyPush = false): Promise<void> {
           fail(`launcher type not supported yet - ${launcherType}`);
         } else if (launcherType === "raw") {
           rawBuildRun(onlyPush, yesFlag, launcherImplementation);
-        } else if (launcherType === "npm") {
-          npmBuildRun(
-            onlyPush,
-            yesFlag,
-            launcherImplementation,
-            implementationModel
-          );
-        } else if (launcherType === "devNpm") {
-          devNpmBuildRun(
-            onlyPush,
-            yesFlag,
-            launcherImplementation,
-            implementationModel
-          );
+        // } else if (launcherType === "npm") {
+        //   npmBuildRun(
+        //     onlyPush,
+        //     yesFlag,
+        //     launcherImplementation,
+        //     implementationModel
+        //   );
+        // } else if (launcherType === "devNpm") {
+        //   devNpmBuildRun(
+        //     onlyPush,
+        //     yesFlag,
+        //     launcherImplementation,
+        //     implementationModel
+        //   );
         } else if (launcherType === "flatNpm") {
           flatNpmBuild(
             onlyPush,
