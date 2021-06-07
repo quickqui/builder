@@ -8,10 +8,12 @@ import merge from "package-merge-lodash-4";
 import assert from "assert";
 
 export function installPackages(packageNames: string[]) {
-  const npmPath = path.resolve(".", env.distDir);
-  log.info(`run npm install at - ${npmPath}`);
-  childProcessSync("npm", ["install", ...packageNames], npmPath);
-  log.info(`npm install finished`);
+  const npmPath = path.resolve(".", env.distDir, "package.json");
+  log.info(`merge npm packages to  - ${npmPath}`);
+  // childProcessSync("npm", ["install", ...packageNames], npmPath);
+  mergeToPkgFile(npmPath, undefined, packageJson(packageNames));
+  log.info(`merge finished`);
+  log.debug(fs.readFileSync(npmPath).toString());
 }
 
 export function createNpmAndInstall(yesFlag: boolean, subDir?: string) {
@@ -29,9 +31,9 @@ export function createNpmAndInstall(yesFlag: boolean, subDir?: string) {
   childProcessSync("npm", yesFlag ? ["init", "--yes"] : ["init"], npmPath);
   log.info(`npm init ran - ${npmPath}`);
   log.info(`startup script copied`);
-  log.info(`run npm install at - ${npmPath}`);
-  childProcessSync("npm", ["install"], npmPath);
-  log.info(`npm install finished`);
+  // log.info(`run npm install at - ${npmPath}`);
+  // // childProcessSync("npm", ["install"], npmPath);
+  // log.info(`npm install finished`);
 }
 export function copyModelDir(
   targetDirName: string = "modelDir",
@@ -58,26 +60,52 @@ export function copyModelDir(
       );
       log.info(`merge package`);
       //to merge package.json
-      if (fs.pathExists(distPackage)) {
-        log.info(`merge package.json`);
-        const dst = fs.readFileSync(distPackage);
-        const src = fs.readFileSync(path.resolve(modelPath, "package.json"));
-        const merged = merge(src, dst);
-        fs.writeFileSync(distPackage, merged);
-      } else {
-        log.info(`copy package.json`);
-        fs.copySync(path.resolve(modelPath, "package.json"), distPackage);
-      }
+      mergeToPkgFile(distPackage, path.resolve(modelPath, "package.json"));
+      log.debug(fs.readFileSync(distPackage).toString());
     }
   }
   log.info(`model dir copied`);
-  if (!onlyPush) {
-    const runInstallPath = path.resolve(env.distDir, targetDirName);
+  
+}
 
-    log.info(`run npm install at - ${runInstallPath}`);
-    childProcessSync("npm", ["install", "--legacy-peer-deps"], runInstallPath);
-    log.info(`npm install finished`);
+function mergeToPkgFile(
+  distPkgFilePath: string,
+  sourcePkgFilePath: string | undefined,
+  sourcePkgContent?: object
+) {
+  // if(sourcePkgFilePath){
+  // if (fs.pathExists(distPkgFilePath)) {
+  //   log.info(`merge package.json`);
+  //   const dst = fs.readFileSync(distPkgFilePath);
+  //   const src = fs.readFileSync(sourcePkgFilePath);
+  //   const merged = merge(src, dst);
+  //   fs.writeFileSync(distPkgFilePath, merged);
+  // } else {
+  //   log.info(`copy package.json`);
+  //   fs.copySync(sourcePkgFilePath, distPkgFilePath);
+  // }}else{
+
+  // }
+  let dst: any = undefined;
+  let src: any = undefined;
+  if (fs.pathExistsSync(distPkgFilePath)) {
+    dst = fs.readFileSync(distPkgFilePath);
   }
+  if (sourcePkgFilePath && fs.pathExists(sourcePkgFilePath)) {
+    src = fs.readFileSync(sourcePkgFilePath);
+  } else {
+    src = sourcePkgContent ? JSON.stringify(sourcePkgContent) : undefined;
+  }
+  const merged = merge(src ?? "{}", dst ?? "{}");
+  fs.writeFileSync(distPkgFilePath, merged);
+}
+
+function packageJson(packageNames: string[]) {
+  return {
+    dependencies: Object.fromEntries(
+      packageNames.map((name) => [name, "latest"])
+    ),
+  };
 }
 
 export function createModelJson(launcher: Implementation) {
@@ -100,7 +128,11 @@ export function createEnvFile(obj: string) {
   fs.writeFileSync(filePathEnv, `${obj}\nDEBUG=*quick*\nDEBUG_LEVEL=INFO`);
   log.info(`.env file write done`);
 }
-export function runHooks(launcherImplementation, implementationModel,buildingEnv:object) {
+export function runHooks(
+  launcherImplementation,
+  implementationModel,
+  buildingEnv: object
+) {
   const hookImplementations = getLifeCycleFromLaunch(
     "building",
     launcherImplementation,
@@ -112,7 +144,10 @@ export function runHooks(launcherImplementation, implementationModel,buildingEnv
     if (hook) {
       log.info("start run building hook - " + JSON.stringify(hook));
       const { command, args, cwd = "." } = hook;
-      assert(hookImplementation.parameters?.packageName!==undefined ,'parameters.packageName can not be undefined');
+      assert(
+        hookImplementation.parameters?.packageName !== undefined,
+        "parameters.packageName can not be undefined"
+      );
       const cwdPath = path.resolve(
         packageBasePath(
           env.distDir,
@@ -120,8 +155,8 @@ export function runHooks(launcherImplementation, implementationModel,buildingEnv
         ),
         cwd
       );
-      log.debug('cwdPath - '+cwdPath)
-      log.debug('buildingEnv - '+ JSON.stringify(buildingEnv));
+      log.debug("cwdPath - " + cwdPath);
+      log.debug("buildingEnv - " + JSON.stringify(buildingEnv));
       log.info(childProcessSync(command, args, cwdPath, buildingEnv));
       log.info("run building hook finished- " + JSON.stringify(hook));
     }

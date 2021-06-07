@@ -3,6 +3,7 @@ import path from "path";
 import { copyModelDir, createEnvFile, createModelJson, createNpmAndInstall, installPackages, runHooks } from "./buildMethods";
 import { getPackageNamesFromLaunch } from "./buildRun";
 import { env } from "./Env";
+import { childProcessSync, log } from "./Util";
 
 export function flatNpmBuild(
   onlyPush: boolean,
@@ -20,6 +21,7 @@ export function flatNpmBuild(
     if (packageNames.length > 0) {
       installPackages(packageNames);
     }
+    
     createModelJson(launcherImplementation);
     createEnvFile(
       `LAUNCHER_TYPE=${env.launcherType}` +
@@ -28,6 +30,14 @@ export function flatNpmBuild(
     );
   }
   copyModelDir(".", onlyPush);
+  if (!onlyPush) {
+    const runInstallPath = path.resolve(env.distDir);
+    log.info(`run npm update at - ${runInstallPath}`);
+    // childProcessSync("npm", ["install", "--legacy-peer-deps"], runInstallPath);
+    // childProcessSync("npm", ["update", "--legacy-peer-deps"], runInstallPath);
+    childProcessSync("npm", ["update"], runInstallPath);
+    log.info(`npm update finished`);
+  }
   runHooks(launcherImplementation, implementationModel, {
     ...process.env,
     DIST_PATH: path.resolve(env.distDir, "."),
