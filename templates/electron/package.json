@@ -1,0 +1,24 @@
+{
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "start-server": "ts-node src/index.ts"
+  },
+  "devDependencies": {
+    "ts-node": "latest",
+    "typescript": "latest"
+  },
+  "dependencies": {
+    "@quick-qui/implementation-model": "latest",
+    "@quick-qui/launcher": "latest",
+    "@quick-qui/model-defines": "latest",
+    "@quick-qui/model-server": "latest",
+    "@types/electron": "^1.6.10",
+    "@types/node": "^15.12.2",
+    "axios": "^0.21.1",
+    "dotenv": "^10.0.0",
+    "electron": "^12.0.0",
+    "electron-log": "^4.3.5",
+    "tree-kill": "^1.2.2"
+  }
+}
