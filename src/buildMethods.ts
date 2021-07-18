@@ -3,7 +3,7 @@ import path from "path";
 import { log, childProcessSync, packageBasePath, notNil } from "./Util";
 import fs from "fs-extra";
 import pkgDir from "pkg-dir";
-import { Implementation } from "@quick-qui/model-defines";
+import { Implementation } from "@quick-qui/implementation-model";
 import merge from "package-merge-lodash-4";
 import assert from "assert";
 

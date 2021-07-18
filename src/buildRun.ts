@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { model } from "./Model";
-import { withImplementationModel } from "@quick-qui/model-defines";
+import { withImplementationModel } from "@quick-qui/implementation-model";
 import { env, ensureLauncherName, ensureDistDir } from "./Env";
 import path from "path";
 import fs from "fs-extra";
@@ -11,6 +11,8 @@ import { flatNpmBuild } from "./flatNpmBuildRun";
 import { npmBuildRun } from "./npmBuildRun";
 import { devNpmBuildRun } from "./devNpmBuildRun";
 import { rawBuildRun } from "./rawBuildRun";
+import { type } from "os";
+import { electronFlatNpmBuild } from "./electronFlatNpmBuildRun";
 
 export async function build(args, options, onlyPush = false): Promise<void> {
   const yesFlag = options.yes ?? false;
@@ -50,22 +52,29 @@ export async function build(args, options, onlyPush = false): Promise<void> {
           fail(`launcher type not supported yet - ${launcherType}`);
         } else if (launcherType === "raw") {
           rawBuildRun(onlyPush, yesFlag, launcherImplementation);
-        // } else if (launcherType === "npm") {
-        //   npmBuildRun(
-        //     onlyPush,
-        //     yesFlag,
-        //     launcherImplementation,
-        //     implementationModel
-        //   );
-        // } else if (launcherType === "devNpm") {
-        //   devNpmBuildRun(
-        //     onlyPush,
-        //     yesFlag,
-        //     launcherImplementation,
-        //     implementationModel
-        //   );
+          // } else if (launcherType === "npm") {
+          //   npmBuildRun(
+          //     onlyPush,
+          //     yesFlag,
+          //     launcherImplementation,
+          //     implementationModel
+          //   );
+          // } else if (launcherType === "devNpm") {
+          //   devNpmBuildRun(
+          //     onlyPush,
+          //     yesFlag,
+          //     launcherImplementation,
+          //     implementationModel
+          //   );
         } else if (launcherType === "flatNpm") {
           flatNpmBuild(
+            onlyPush,
+            yesFlag,
+            launcherImplementation,
+            implementationModel
+          );
+        } else if (launcherType === "electron") {
+          electronFlatNpmBuild(
             onlyPush,
             yesFlag,
             launcherImplementation,

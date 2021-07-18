@@ -55,7 +55,7 @@ export const model: Promise<Model> = ready().then(() => {
 });
 
 const readLogs = (_) => {
-  log.info(_)
+  log.debug(_)
   const modelServerEndpointUrl = `http://localhost:${env.modelServerPort}`;
   return axios
     .get(`${modelServerEndpointUrl}/models/default/logs`)

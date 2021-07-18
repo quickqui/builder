@@ -14,9 +14,10 @@
     "rootDir": "dist"
   },
   "dependencies": {
+    "@quick-qui/implementation-model": "^1.10.3",
     "@quick-qui/model-core": "^2.1.2",
-    "@quick-qui/model-defines": "^2.7.11",
-    "@quick-qui/model-server": "^1.4.8",
+    "@quick-qui/model-defines": "^2.8.0",
+    "@quick-qui/model-server": "^1.4.9",
     "@types/change-case": "^2.3.1",
     "@types/dotenv": "^8.2.0",
     "@types/filenamify": "^2.0.2",
@@ -24,7 +25,7 @@
     "@types/lodash": "^4.14.170",
     "@types/pkg-dir": "^2.0.1",
     "@types/pkg-up": "^3.1.0",
-    "@types/prompts": "^2.0.12",
+    "@types/prompts": "^2.0.13",
     "@types/rewire": "^2.5.28",
     "async-exit-hook": "^2.0.1",
     "axios": "^0.21.1",
@@ -40,14 +41,14 @@
     "pkg-dir": "^5.0.0",
     "pkg-up": "^3.1.0",
     "portfinder": "^1.0.28",
-    "prompts": "^2.4.0",
+    "prompts": "^2.4.1",
     "rewire": "^5.0.0",
     "wait-port": "^0.2.9"
   },
   "devDependencies": {
     "@types/jest": "^26.0.23",
-    "@types/node": "^15.6.1",
-    "jest": "^27.0.1",
+    "@types/node": "^15.12.2",
+    "jest": "^27.0.4",
     "ts-node": "^10.0.0",
     "typescript": "^4.3.2"
   },

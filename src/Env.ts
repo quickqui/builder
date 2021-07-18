@@ -1,7 +1,7 @@
 import { filterObject, noEnvFound, log } from "./Util";
 import prompts from "prompts";
 import filenamify from "filenamify";
-import { Implementation, ImplementationModel } from "@quick-qui/model-defines";
+import { Implementation, ImplementationModel } from "@quick-qui/implementation-model";
 import path from "path";
 import { snakeCase } from "change-case";
 import portfinder from "portfinder";
@@ -81,7 +81,7 @@ export async function ensureLauncherName(
     .map((implementation) => ({
       title: implementation.name,
       value: implementation.name,
-    }));
+    })).sort();
   if (choices.length === 1) {
     if (yesFlag) {
       env.launcherName = choices[0].value;

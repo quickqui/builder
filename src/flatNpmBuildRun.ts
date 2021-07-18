@@ -1,4 +1,4 @@
-import { Implementation } from "@quick-qui/model-defines";
+import { Implementation } from "@quick-qui/implementation-model";
 import path from "path";
 import { copyModelDir, createEnvFile, createModelJson, createNpmAndInstall, installPackages, runHooks } from "./buildMethods";
 import { getPackageNamesFromLaunch } from "./buildRun";
