@@ -5,6 +5,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "@quick-qui/implementation-model":"latest",
     "@quick-qui/launcher": "latest",
     "@quick-qui/model-defines": "latest",
     "dotenv": "latest"
