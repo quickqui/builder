@@ -1,19 +1,25 @@
-import { Implementation } from "@quick-qui/implementation-model";
+import { Implementation, ImplementationModel } from '@quick-qui/implementation-model';
 import path from "path";
-import { copyModelDir, createEnvFile, createModelJson, createNpmAndInstall, installPackages, runHooks } from "./buildMethods";
-import { getPackageNamesFromLaunch } from "./buildRun";
-import { env } from "./Env";
-import { childProcessSync, log } from "./Util";
+import {
+  copyModelDir,
+  createEnvFile,
+  createModelJson,
+  createNpmAndInstall,
+  installPackages,
+  runHooks,
+} from "../../buildMethods";
+import { getPackageNamesFromLaunch } from "../../buildMethods";
+import { RunFlag } from '../../buildRun';
+import { env } from "../../Env";
+import { childProcessSync, log } from "../../Util";
 
-export function flatNpmBuild(
-  onlyPush: boolean,
-  yesFlag: any,
+export function electronFlatNpmBuild(
+  { onlyPush, yesFlag }: RunFlag,
   launcherImplementation: Implementation,
-  implementationModel
+  implementationModel: ImplementationModel
 ) {
   if (!onlyPush) {
-    //TODO flatNpm的情况下， npm install不需要两次。
-    createNpmAndInstall(yesFlag, "npm");
+    createNpmAndInstall(yesFlag, path.resolve(__dirname, "./template"));
     const packageNames = getPackageNamesFromLaunch(
       launcherImplementation,
       implementationModel
@@ -21,7 +27,7 @@ export function flatNpmBuild(
     if (packageNames.length > 0) {
       installPackages(packageNames);
     }
-    
+
     createModelJson(launcherImplementation);
     createEnvFile(
       `LAUNCHER_TYPE=${env.launcherType}` +

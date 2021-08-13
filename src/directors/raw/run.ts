@@ -1,19 +1,24 @@
-import { env } from "./Env";
+import { env } from "../../Env";
 import {
   createNpmAndInstall,
   createModelJson,
   createEnvFile,
-} from "./buildMethods";
+} from "../../buildMethods";
 import path from "path";
-import { childProcessSync, log } from "./Util";
+import { childProcessSync, log } from "../../Util";
+import {
+  Implementation,
+  ImplementationModel,
+} from "@quick-qui/implementation-model";
+import { RunFlag } from "../../buildRun";
 
 export function rawBuildRun(
-  onlyPush: boolean,
-  yesFlag: any,
-  launcherImplementation
+  { onlyPush, yesFlag }: RunFlag,
+  launcherImplementation: Implementation,
+  implementationModel: ImplementationModel
 ) {
   if (!onlyPush) {
-    createNpmAndInstall(yesFlag);
+    createNpmAndInstall(yesFlag, path.resolve(__dirname, "./template"));
     createModelJson(launcherImplementation);
     createEnvFile(
       `LAUNCHER_TYPE=${env.launcherType}` +

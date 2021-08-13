@@ -1,19 +1,25 @@
-import { Implementation } from "@quick-qui/implementation-model";
+import { Implementation, ImplementationModel } from "@quick-qui/implementation-model";
 import path from "path";
-import { copyModelDir, createEnvFile, createModelJson, createNpmAndInstall, installPackages, runHooks } from "./buildMethods";
-import { getPackageNamesFromLaunch } from "./buildRun";
-import { env } from "./Env";
-import { childProcessSync, log } from "./Util";
+import {
+  copyModelDir,
+  createEnvFile,
+  createModelJson,
+  createNpmAndInstall,
+  installPackages,
+  runHooks,
+} from "../../buildMethods";
+import { getPackageNamesFromLaunch } from "../../buildMethods";
+import { RunFlag } from "../../buildRun";
+import { env } from "../../Env";
+import { childProcessSync, log } from "../../Util";
 
-export function electronFlatNpmBuild(
-  onlyPush: boolean,
-  yesFlag: any,
+export function flatNpmBuild(
+  { onlyPush, yesFlag }: RunFlag,
   launcherImplementation: Implementation,
-  implementationModel
+  implementationModel: ImplementationModel
 ) {
   if (!onlyPush) {
-    //TODO flatNpm的情况下， npm install不需要两次。
-    createNpmAndInstall(yesFlag, "electron");
+    createNpmAndInstall(yesFlag, path.resolve(__dirname, "./template"));
     const packageNames = getPackageNamesFromLaunch(
       launcherImplementation,
       implementationModel

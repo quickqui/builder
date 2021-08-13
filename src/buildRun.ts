@@ -1,18 +1,29 @@
 #!/usr/bin/env node
 
 import { model } from "./Model";
-import { withImplementationModel } from "@quick-qui/implementation-model";
+import {
+  Implementation,
+  ImplementationModel,
+  withImplementationModel,
+} from "@quick-qui/implementation-model";
 import { env, ensureLauncherName, ensureDistDir } from "./Env";
 import path from "path";
 import fs from "fs-extra";
-import { log, notNil } from "./Util";
+import { log } from "./Util";
 import { fail } from "assert";
-import { flatNpmBuild } from "./flatNpmBuildRun";
-import { npmBuildRun } from "./npmBuildRun";
-import { devNpmBuildRun } from "./devNpmBuildRun";
-import { rawBuildRun } from "./rawBuildRun";
-import { type } from "os";
-import { electronFlatNpmBuild } from "./electronFlatNpmBuildRun";
+import { flatNpmBuild } from "./directors/npm/run";
+import { rawBuildRun } from "./directors/raw/run";
+import { electronFlatNpmBuild } from "./directors/electron/run";
+
+export interface RunFlag{
+  onlyPush: boolean,
+  yesFlag: boolean,
+}
+export type RunFunction = (
+  runFlag: RunFlag,
+  launcherImplementation: Implementation,
+  implementationModel: ImplementationModel
+) => void;
 
 export async function build(args, options, onlyPush = false): Promise<void> {
   const yesFlag = options.yes ?? false;
@@ -47,36 +58,23 @@ export async function build(args, options, onlyPush = false): Promise<void> {
       if (launcherImplementation) {
         await ensureDistDir(yesFlag, launcherImplementation);
         fs.ensureDirSync(path.resolve(".", env.distDir));
-        // fs.emptyDirSync(path.resolve(".", env.distDir));
+
+        let runFunction: RunFunction | undefined = undefined;
         if (launcherType === "docker") {
           fail(`launcher type not supported yet - ${launcherType}`);
         } else if (launcherType === "raw") {
-          rawBuildRun(onlyPush, yesFlag, launcherImplementation);
-          // } else if (launcherType === "npm") {
-          //   npmBuildRun(
-          //     onlyPush,
-          //     yesFlag,
-          //     launcherImplementation,
-          //     implementationModel
-          //   );
-          // } else if (launcherType === "devNpm") {
-          //   devNpmBuildRun(
-          //     onlyPush,
-          //     yesFlag,
-          //     launcherImplementation,
-          //     implementationModel
-          //   );
-        } else if (launcherType === "flatNpm") {
-          flatNpmBuild(
-            onlyPush,
-            yesFlag,
-            launcherImplementation,
-            implementationModel
-          );
+          runFunction = rawBuildRun;
+        } else if (launcherType === "npm") {
+          runFunction = flatNpmBuild;
         } else if (launcherType === "electron") {
-          electronFlatNpmBuild(
-            onlyPush,
-            yesFlag,
+          runFunction = electronFlatNpmBuild;
+        } else {
+          fail(`launcher type not supported yet - ${launcherType}`);
+        }
+        if (runFunction) {
+          runFunction(
+            {onlyPush,
+            yesFlag},
             launcherImplementation,
             implementationModel
           );
@@ -87,41 +85,6 @@ export async function build(args, options, onlyPush = false): Promise<void> {
         fail(`no launcher found - name=${launcherName}`);
       }
       return;
-
-      //MARK 不同的launcher type有不同的成品目录结构，所以有不同的builder步骤。
-      //MARK 有待提高。目前来看builder的模型驱动没有体现，只能是与type的映射。有几个type，有几种builder。
-      //MARK type=raw 假定依赖在../xxx 的位置。
-      //MARK    index.js launch()
-      //MARK type=docker modelDir被mount到每个container
-      //MARK    index.js
-      //MARK type=npm
-      //MARK    index.js
-      //MARK    modelDir
-
-      //TODO 实现层可能需要一个hook，比如front需要build 到生产环境。
-      //TODO front 的 npm run build需要在copy以后运行？
-
-      //MARK template作为optional dependencies 安装。
     }
   });
-}
-
-export function getPackageNamesFromLaunch(
-  launcherImplementation,
-  implementationModel
-): string[] {
-  const launch = launcherImplementation.parameters?.["launch"];
-
-  return launch
-    ?.map((launchName) => {
-      const implementation = implementationModel?.implementations?.find(
-        (imp) => imp.name === launchName
-      );
-      if (implementation && implementation.runtime === "command") {
-        return implementation.parameters?.["packageName"];
-      } else {
-        return undefined;
-      }
-    })
-    .filter(notNil);
 }

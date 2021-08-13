@@ -2,7 +2,6 @@ import { env } from "./Env";
 import path from "path";
 import { log, childProcessSync, packageBasePath, notNil } from "./Util";
 import fs from "fs-extra";
-import pkgDir from "pkg-dir";
 import { Implementation } from "@quick-qui/implementation-model";
 import merge from "package-merge-lodash-4";
 import assert from "assert";
@@ -16,17 +15,10 @@ export function installPackages(packageNames: string[]) {
   log.debug(fs.readFileSync(npmPath).toString());
 }
 
-export function createNpmAndInstall(yesFlag: boolean, subDir?: string) {
+export function createNpmAndInstall(yesFlag: boolean, dir: string) {
   const npmPath = path.resolve(".", env.distDir);
   log.info(`copying startup script`);
-  fs.copySync(
-    path.resolve(
-      pkgDir.sync(__dirname) ?? ".",
-      "./templates",
-      subDir ?? "default"
-    ),
-    npmPath
-  );
+  fs.copySync(dir, npmPath);
   log.info(`run npm init at - ${npmPath}`);
   childProcessSync("npm", yesFlag ? ["init", "--yes"] : ["init"], npmPath);
   log.info(`npm init ran - ${npmPath}`);
@@ -51,6 +43,12 @@ export function copyModelDir(
     fs.ensureDirSync(distDistDir);
     fs.copySync(path.resolve(modelPath, "dist"), distDistDir);
   }
+  if (fs.pathExists(path.resolve(modelPath, "src"))) {
+    const distDistDir = path.resolve(env.distDir, targetDirName, "src");
+    fs.ensureDirSync(distDistDir);
+    //TODO template里面很多时候有index.ts 文件， 是否需要处理覆盖问题？
+    fs.copySync(path.resolve(modelPath, "src"), distDistDir);
+  }
   if (!onlyPush) {
     if (fs.pathExists(path.resolve(modelPath, "package.json"))) {
       const distPackage = path.resolve(
@@ -65,7 +63,6 @@ export function copyModelDir(
     }
   }
   log.info(`model dir copied`);
-  
 }
 
 function mergeToPkgFile(
@@ -179,6 +176,26 @@ function getLifeCycleFromLaunch(
         implementation.lifeCycle?.[lifeCycleName] !== undefined
       ) {
         return implementation;
+      } else {
+        return undefined;
+      }
+    })
+    .filter(notNil);
+}
+
+export function getPackageNamesFromLaunch(
+  launcherImplementation,
+  implementationModel
+): string[] {
+  const launch = launcherImplementation.parameters?.["launch"];
+
+  return launch
+    ?.map((launchName) => {
+      const implementation = implementationModel?.implementations?.find(
+        (imp) => imp.name === launchName
+      );
+      if (implementation && implementation.runtime === "command") {
+        return implementation.parameters?.["packageName"];
       } else {
         return undefined;
       }
